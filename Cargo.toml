@@ -3,4 +3,6 @@ name = "cygwin_symlinks"
 version = "0.1.0"
 authors = ["Mihail Konev <k.mvc@ya.ru>"]
 
-[dependencies]
+[target.'cfg(windows)'.dependencies]
+kernel32-sys = "0.2.2"
+winapi = "0.2.8"
