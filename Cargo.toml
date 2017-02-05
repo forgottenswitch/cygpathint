@@ -1,5 +1,5 @@
 [package]
-name = "cygwin_symlinks"
+name = "cygwin_path"
 version = "0.1.0"
 authors = ["Mihail Konev <k.mvc@ya.ru>"]
 

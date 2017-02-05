@@ -1,7 +1,7 @@
-cygwin\_symlinks.rs
+cygwin\_path.rs
 ===================
 
-Provides ability for Rust on Windows applications to interpret Cygwin symlinks,
+Provides ability for Rust on Windows applications to interpret Cygwin paths,
 when they are run from Cygwin console or script.
 
 Testing

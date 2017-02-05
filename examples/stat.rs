@@ -1,4 +1,4 @@
-extern crate cygwin_symlinks;
+extern crate cygwin_path;
 
 use std::path::Path;
 
@@ -11,7 +11,7 @@ fn stat_path(path: &Path) {
 fn stat_path(path: &Path) {
     println!("{:?}", path);
 
-    let maybe_cygwin_symlink = cygwin_symlinks::maybe_cygwin_symlink(&path);
+    let maybe_cygwin_symlink = cygwin_path::maybe_cygwin_symlink(&path);
     println!("  maybe cygwin symlink: {}", maybe_cygwin_symlink);
 }
 
