@@ -1,0 +1,6 @@
+[package]
+name = "cygwin_symlinks"
+version = "0.1.0"
+authors = ["Mihail Konev <k.mvc@ya.ru>"]
+
+[dependencies]
