@@ -90,12 +90,45 @@ impl CygRoot {
         let path_s = path.to_string_lossy().into_owned();
         let path_b = path_s.as_bytes();
         let mut ret = PathBuf::new();
+        let mut cygdrive_end = 0;
         if path_s.as_str().starts_with("/") {
-            ret.push(&self.native_path_to_root);
+            let mut cygdrive = '\0';
+            let path_blen = path_b.len();
+            // Check for /cygdrive/drive_letter/
+            eat_chars(path_s.as_str(), '/').and_then(|path_1| {
+                eat_str(path_1, "cygdrive").and_then(|path_11| {
+                    eat_chars(path_11, '/').and_then(|path_2| {
+                        pop_char(path_2).and_then(|(drive_letter, path_22)| {
+                            if valid_drive_letter(drive_letter) {
+                                if path_22.len() == 0 {
+                                    cygdrive = drive_letter;
+                                    cygdrive_end = path_blen;
+                                } else {
+                                    eat_chars(path_22, '/').and_then(|path_3| {
+                                        cygdrive = drive_letter;
+                                        cygdrive_end = path_blen - path_3.as_bytes().len();
+                                        Some(0)
+                                    });
+                                };
+                            };
+                            Some(0)
+                        });
+                        Some(0)
+                    });
+                    Some(0)
+                });
+                Some(0)
+            });
+            if cygdrive != '\0' {
+                ret.push(format!("{}:\\", cygdrive));
+            } else {
+                ret.push(&self.native_path_to_root);
+            }
         }
         let mut last_was_slash = false;
         let mut beg_path_comp = 0;
         for (i, ch) in path_s.char_indices() {
+            if i < cygdrive_end { continue; }
             if ch == '/' || ch == '\\' {
                 if !last_was_slash {
                     if i > beg_path_comp {
@@ -153,3 +186,78 @@ fn find_in_pathlist(pathlist: &Option<OsString>, filename: &Path) -> Option<Path
         }
     }
 }
+
+#[cfg(windows)]
+fn valid_drive_letter(x: char) -> bool {
+    (x >= 'a' && x <= 'z') || (x >= 'A' && x <= 'Z')
+}
+
+#[cfg(windows)]
+fn pop_char<'a>(s: &'a str) -> Option<(char, &'a str)> {
+    let mut ret_beg = 0;
+    let mut ret_ch = '\0';
+    for (i, ch) in s.char_indices() {
+        if i == 0 {
+            ret_ch = ch;
+        } {
+            ret_beg = i;
+            break;
+        }
+    }
+    if ret_beg == 0 {
+        None
+    } else {
+        let ret_b = &s.as_bytes()[ret_beg..];
+        let ret_s = unsafe {
+            ::std::str::from_utf8_unchecked(ret_b)
+        };
+        Some((ret_ch, ret_s))
+    }
+}
+
+#[cfg(windows)]
+fn eat_chars<'a>(s: &'a str, x: char) -> Option<&'a str> {
+    let mut ret_beg = 0;
+    for (i, ch) in s.char_indices() {
+        if ch != x {
+            ret_beg = i;
+            break;
+        }
+    }
+    if ret_beg == 0 {
+        None
+    } else {
+        let ret_b = &s.as_bytes()[ret_beg..];
+        let ret_s = unsafe {
+            ::std::str::from_utf8_unchecked(ret_b)
+        };
+        Some(ret_s)
+    }
+}
+
+#[cfg(windows)]
+fn eat_str<'a>(s: &'a str, s1: &str) -> Option<&'a str> {
+    let mut chs1 = s1.chars();
+    let mut ret_beg = 0;
+    for (i, ch) in s.char_indices() {
+        match chs1.next() {
+            None => break,
+            Some(x) => {
+                if ch != x {
+                    ret_beg = i;
+                    break;
+                }
+            },
+        }
+    }
+    if chs1.next().is_some() {
+        None
+    } else {
+        let ret_b = &s.as_bytes()[ret_beg..];
+        let ret_s = unsafe {
+            ::std::str::from_utf8_unchecked(ret_b)
+        };
+        Some(ret_s)
+    }
+}
+

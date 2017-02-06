@@ -9,7 +9,7 @@ Testing
 In Cygwin shell:
 ```
 ln -s /tmp /tmp/symlink
-cargo run --example stat -- . C:/cygwin/tmp/symlink
+cargo run --example stat -- . C:/cygwin/tmp/symlink /tmp /cygdrive/c
 ```
 
 License
