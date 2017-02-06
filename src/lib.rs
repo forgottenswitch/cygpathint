@@ -19,21 +19,29 @@ use winapi::winnt::{
     FILE_ATTRIBUTE_SYSTEM,
 };
 
-#[cfg(windows)]
-fn find_in_pathlist(pathlist: &Option<OsString>, filename: &Path) -> Option<PathBuf> {
-    match pathlist {
-        &None => None,
-        &Some(ref pathlist_os) => {
-            for dir in std::env::split_paths(&pathlist_os) {
-                let filepath = dir.join(filename);
-                if filepath.is_file() {
-                    return Some(filepath);
-                }
-            }
-            None
-        }
+// Stub
+
+#[cfg(not(windows))]
+pub struct CygRoot {
+}
+
+#[cfg(not(windows))]
+impl CygRoot {
+    pub fn new() -> CygRoot {
+        CygRoot {}
+    }
+
+    pub fn running_under_cygwin(&self) -> bool {
+        false
     }
 }
+
+#[cfg(not(windows))]
+pub fn maybe_cygwin_symlink(path: &Path) -> bool {
+    false
+}
+
+// Implementation
 
 #[cfg(windows)]
 pub struct CygRoot {
@@ -41,22 +49,8 @@ pub struct CygRoot {
     running_under_cygwin: bool,
 }
 
-#[cfg(not(windows))]
-pub struct CygRoot {
-}
-
+#[cfg(windows)]
 impl CygRoot {
-    #[cfg(not(windows))]
-    pub fn new() -> CygRoot {
-        CygRoot {}
-    }
-
-    #[cfg(not(windows))]
-    pub fn running_under_cygwin(&self) -> bool {
-        false
-    }
-
-    #[cfg(windows)]
     pub fn new() -> CygRoot {
         let env_path = std::env::var_os("PATH");
         let cygwin_dll_name = Path::new("cygwin1.dll");
@@ -83,20 +77,13 @@ impl CygRoot {
         }
     }
 
-    #[cfg(windows)]
     pub fn root_path(&self) -> &Path {
         self.native_path_to_root.as_path()
     }
 
-    #[cfg(windows)]
     pub fn running_under_cygwin(&self) -> bool {
         self.running_under_cygwin
     }
-}
-
-#[cfg(not(windows))]
-pub fn maybe_cygwin_symlink(path: &Path) -> bool {
-    false
 }
 
 #[cfg(windows)]
@@ -109,4 +96,22 @@ pub fn maybe_cygwin_symlink(path: &Path) -> bool {
         return false;
     }
     return (attr & FILE_ATTRIBUTE_SYSTEM) != 0;
+}
+
+// Utilites
+
+#[cfg(windows)]
+fn find_in_pathlist(pathlist: &Option<OsString>, filename: &Path) -> Option<PathBuf> {
+    match pathlist {
+        &None => None,
+        &Some(ref pathlist_os) => {
+            for dir in std::env::split_paths(&pathlist_os) {
+                let filepath = dir.join(filename);
+                if filepath.is_file() {
+                    return Some(filepath);
+                }
+            }
+            None
+        }
+    }
 }
