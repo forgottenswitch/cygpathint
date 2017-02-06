@@ -261,3 +261,39 @@ fn eat_str<'a>(s: &'a str, s1: &str) -> Option<&'a str> {
     }
 }
 
+#[cfg(test)]
+#[cfg(windows)]
+mod win32_tests {
+
+use std::ffi::OsString;
+use std::path::PathBuf;
+
+use CygRoot;
+
+fn cygwin() -> CygRoot {
+    let root = PathBuf::from("C:\\cygwin");
+    return CygRoot {
+        running_under_cygwin: true,
+        native_path_to_root: root,
+    };
+}
+
+#[test]
+fn converts_absolute_posix_paths() {
+    let cygroot = cygwin();
+    let posix = OsString::from("/tmp");
+    let win32_p = cygroot.convert_path_to_native(posix.as_os_str());
+    let win32_s = win32_p.as_os_str().to_string_lossy().into_owned();
+    assert_eq!(win32_s, "C:\\cygwin\\tmp");
+}
+
+#[test]
+fn converts_absolute_cygdrive_paths() {
+    let cygroot = cygwin();
+    let posix = OsString::from("/cygdrive/c");
+    let win32_p = cygroot.convert_path_to_native(posix.as_os_str());
+    let win32_s = win32_p.as_os_str().to_string_lossy().into_owned();
+    assert_eq!(win32_s, "C:\\");
+}
+
+}
