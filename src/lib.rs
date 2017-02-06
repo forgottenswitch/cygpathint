@@ -4,7 +4,7 @@ extern crate kernel32;
 extern crate winapi;
 
 #[cfg(windows)]
-use std::ffi::OsString;
+use std::ffi::{OsStr,OsString};
 #[cfg(windows)]
 use std::os::windows::ffi::OsStrExt;
 #[cfg(windows)]
@@ -83,6 +83,44 @@ impl CygRoot {
 
     pub fn running_under_cygwin(&self) -> bool {
         self.running_under_cygwin
+    }
+
+    /// Converts /cygwin/path to C:\native\one, without following symlinks.
+    pub fn convert_path_to_native(&self, path: &OsStr) -> PathBuf {
+        let path_s = path.to_string_lossy().into_owned();
+        let path_b = path_s.as_bytes();
+        let mut ret = PathBuf::new();
+        if path_s.as_str().starts_with("/") {
+            ret.push(&self.native_path_to_root);
+        }
+        let mut last_was_slash = false;
+        let mut beg_path_comp = 0;
+        for (i, ch) in path_s.char_indices() {
+            if ch == '/' || ch == '\\' {
+                if !last_was_slash {
+                    if i > beg_path_comp {
+                        let path_component = unsafe {
+                            ::std::str::from_utf8_unchecked(&path_b[beg_path_comp..i])
+                        };
+                        ret.push(path_component);
+                    }
+                    ret.join("\\");
+                    last_was_slash = true;
+                }
+                continue;
+            }
+            if last_was_slash {
+                last_was_slash = false;
+                beg_path_comp = i;
+            }
+        }
+        if beg_path_comp < path_b.len() - 1 {
+            let final_path_component = unsafe {
+                ::std::str::from_utf8_unchecked(&path_b[beg_path_comp..])
+            };
+            ret.join(final_path_component);
+        }
+        ret
     }
 }
 
