@@ -101,11 +101,11 @@ impl CygRoot {
                         pop_char(path_2).and_then(|(drive_letter, path_22)| {
                             if valid_drive_letter(drive_letter) {
                                 if path_22.len() == 0 {
-                                    cygdrive = drive_letter;
+                                    cygdrive = ascii_upcase(drive_letter);
                                     cygdrive_end = path_blen;
                                 } else {
                                     eat_chars(path_22, '/').and_then(|path_3| {
-                                        cygdrive = drive_letter;
+                                        cygdrive = ascii_upcase(drive_letter);
                                         cygdrive_end = path_blen - path_3.as_bytes().len();
                                         Some(0)
                                     });
@@ -147,11 +147,11 @@ impl CygRoot {
                 beg_path_comp = i;
             }
         }
-        if beg_path_comp < path_b.len() - 1 {
+        if beg_path_comp < path_b.len() - 1 && cygdrive_end == 0 {
             let final_path_component = unsafe {
                 ::std::str::from_utf8_unchecked(&path_b[beg_path_comp..])
             };
-            ret.join(final_path_component);
+            ret.push(final_path_component);
         }
         ret
     }
@@ -195,23 +195,28 @@ fn valid_drive_letter(x: char) -> bool {
 #[cfg(windows)]
 fn pop_char<'a>(s: &'a str) -> Option<(char, &'a str)> {
     let mut ret_beg = 0;
-    let mut ret_ch = '\0';
+    let mut ret_ch = None;
     for (i, ch) in s.char_indices() {
         if i == 0 {
-            ret_ch = ch;
-        } {
+            ret_ch = Some(ch);
+        } else {
             ret_beg = i;
             break;
         }
     }
-    if ret_beg == 0 {
-        None
-    } else {
-        let ret_b = &s.as_bytes()[ret_beg..];
-        let ret_s = unsafe {
-            ::std::str::from_utf8_unchecked(ret_b)
-        };
-        Some((ret_ch, ret_s))
+    match ret_ch {
+        None => None,
+        Some(ch) => {
+            if ret_beg == 0 {
+                Some((ch, ""))
+            } else {
+                let ret_b = &s.as_bytes()[ret_beg..];
+                let ret_s = unsafe {
+                    ::std::str::from_utf8_unchecked(ret_b)
+                };
+                Some((ch, ret_s))
+            }
+        }
     }
 }
 
@@ -241,11 +246,13 @@ fn eat_str<'a>(s: &'a str, s1: &str) -> Option<&'a str> {
     let mut ret_beg = 0;
     for (i, ch) in s.char_indices() {
         match chs1.next() {
-            None => break,
+            None => {
+                ret_beg = i;
+                break;
+            },
             Some(x) => {
                 if ch != x {
-                    ret_beg = i;
-                    break;
+                    return None;
                 }
             },
         }
@@ -261,6 +268,16 @@ fn eat_str<'a>(s: &'a str, s1: &str) -> Option<&'a str> {
     }
 }
 
+#[cfg(windows)]
+fn ascii_upcase(x: char) -> char {
+    if x >= 'a' && x <= 'z' {
+        let c = x as u32;
+        let d = c - ('a' as u32);
+        return ::std::char::from_u32(('A' as u32) + d).unwrap_or('\0');
+    }
+    return x;
+}
+
 #[cfg(test)]
 #[cfg(windows)]
 mod win32_tests {
@@ -271,7 +288,7 @@ use std::path::PathBuf;
 use CygRoot;
 
 fn cygwin() -> CygRoot {
-    let root = PathBuf::from("C:\\cygwin");
+    let root = PathBuf::from("F:\\cygwin");
     return CygRoot {
         running_under_cygwin: true,
         native_path_to_root: root,
@@ -284,16 +301,16 @@ fn converts_absolute_posix_paths() {
     let posix = OsString::from("/tmp");
     let win32_p = cygroot.convert_path_to_native(posix.as_os_str());
     let win32_s = win32_p.as_os_str().to_string_lossy().into_owned();
-    assert_eq!(win32_s, "C:\\cygwin\\tmp");
+    assert_eq!(win32_s, "F:\\cygwin\\tmp");
 }
 
 #[test]
 fn converts_absolute_cygdrive_paths() {
     let cygroot = cygwin();
-    let posix = OsString::from("/cygdrive/c");
+    let posix = OsString::from("/cygdrive/f");
     let win32_p = cygroot.convert_path_to_native(posix.as_os_str());
     let win32_s = win32_p.as_os_str().to_string_lossy().into_owned();
-    assert_eq!(win32_s, "C:\\");
+    assert_eq!(win32_s, "F:\\");
 }
 
 }
