@@ -105,5 +105,8 @@ pub fn maybe_cygwin_symlink(path: &Path) -> bool {
     let attr = unsafe {
         kernel32::GetFileAttributesW(path_wz.as_ptr())
     };
+    if attr == winapi::INVALID_FILE_ATTRIBUTES {
+        return false;
+    }
     return (attr & FILE_ATTRIBUTE_SYSTEM) != 0;
 }
