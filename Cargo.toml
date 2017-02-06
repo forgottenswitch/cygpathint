@@ -1,5 +1,5 @@
 [package]
-name = "cygwin_path"
+name = "cygwin_fs"
 version = "0.1.0"
 authors = ["Mihail Konev <k.mvc@ya.ru>"]
 

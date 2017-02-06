@@ -1,27 +1,28 @@
-extern crate cygwin_path;
+extern crate cygwin_fs;
+
+use cygwin_fs::{CygRoot, maybe_cygwin_symlink};
 
 use std::path::Path;
 
-fn stat_path(path: &Path, cygpath: &cygwin_path::CygwinPath) {
+fn stat_path(path: &Path, cygroot: &CygRoot) {
     println!("{:?}", path);
 
-    if !cygpath.running_under_cygwin() {
+    if !cygroot.running_under_cygwin() {
         println!("  Not running under cygwin.");
     } else {
-        println!("  Cygwin root: {:?}", cygpath.root_path());
+        println!("  Cygwin root: {:?}", cygroot.root_path());
 
-        let maybe_cygwin_symlink = cygwin_path::maybe_cygwin_symlink(&path);
-        println!("  Maybe cygwin symlink: {}", maybe_cygwin_symlink);
+        println!("  Maybe cygwin symlink: {}", maybe_cygwin_symlink(&path));
     }
 }
 
 fn main() {
-    let cygpath = cygwin_path::CygwinPath::new();
+    let cygroot = CygRoot::new();
 
     let mut first_arg = true;
     for arg in std::env::args_os() {
         if first_arg { first_arg = false; continue; }
         let path = Path::new(&arg);
-        stat_path(path, &cygpath);
+        stat_path(path, &cygroot);
     }
 }

@@ -36,19 +36,19 @@ fn find_in_pathlist(pathlist: &Option<OsString>, filename: &Path) -> Option<Path
 }
 
 #[cfg(windows)]
-pub struct CygwinPath {
+pub struct CygRoot {
     native_path_to_root: PathBuf,
     running_under_cygwin: bool,
 }
 
 #[cfg(not(windows))]
-pub struct CygwinPath {
+pub struct CygRoot {
 }
 
-impl CygwinPath {
+impl CygRoot {
     #[cfg(not(windows))]
-    pub fn new() -> CygwinPath {
-        CygwinPath {}
+    pub fn new() -> CygRoot {
+        CygRoot {}
     }
 
     #[cfg(not(windows))]
@@ -57,7 +57,7 @@ impl CygwinPath {
     }
 
     #[cfg(windows)]
-    pub fn new() -> CygwinPath {
+    pub fn new() -> CygRoot {
         let env_path = std::env::var_os("PATH");
         let cygwin_dll_name = Path::new("cygwin1.dll");
         let mut under_cygwin = false;
@@ -77,7 +77,7 @@ impl CygwinPath {
                             },
                     },
             };
-        CygwinPath {
+        CygRoot {
             running_under_cygwin: under_cygwin,
             native_path_to_root: root,
         }
