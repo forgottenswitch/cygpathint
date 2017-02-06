@@ -127,8 +127,17 @@ impl CygRoot {
         }
         let mut last_was_slash = false;
         let mut beg_path_comp = 0;
+        let mut just_past_cygdrive = false;
         for (i, ch) in path_s.char_indices() {
-            if i < cygdrive_end { continue; }
+            if i < cygdrive_end {
+                just_past_cygdrive = true;
+                beg_path_comp = i;
+                continue;
+            }
+            if just_past_cygdrive {
+                just_past_cygdrive = false;
+                beg_path_comp = i;
+            }
             if ch == '/' || ch == '\\' {
                 if !last_was_slash {
                     if i > beg_path_comp {
@@ -137,7 +146,6 @@ impl CygRoot {
                         };
                         ret.push(path_component);
                     }
-                    ret.join("\\");
                     last_was_slash = true;
                 }
                 continue;
@@ -147,7 +155,7 @@ impl CygRoot {
                 beg_path_comp = i;
             }
         }
-        if beg_path_comp < path_b.len() - 1 && cygdrive_end == 0 {
+        if beg_path_comp < path_b.len() - 1 {
             let final_path_component = unsafe {
                 ::std::str::from_utf8_unchecked(&path_b[beg_path_comp..])
             };
@@ -305,12 +313,30 @@ fn converts_absolute_posix_paths() {
 }
 
 #[test]
+fn converts_absolute_posix_paths_several_levels_deep() {
+    let cygroot = cygwin();
+    let posix = OsString::from("/tmp/abc/def/ghi");
+    let win32_p = cygroot.convert_path_to_native(posix.as_os_str());
+    let win32_s = win32_p.as_os_str().to_string_lossy().into_owned();
+    assert_eq!(win32_s, "F:\\cygwin\\tmp\\abc\\def\\ghi");
+}
+
+#[test]
 fn converts_absolute_cygdrive_paths() {
     let cygroot = cygwin();
     let posix = OsString::from("/cygdrive/f");
     let win32_p = cygroot.convert_path_to_native(posix.as_os_str());
     let win32_s = win32_p.as_os_str().to_string_lossy().into_owned();
     assert_eq!(win32_s, "F:\\");
+}
+
+#[test]
+fn converts_absolute_cygdrive_paths_several_levels_deep() {
+    let cygroot = cygwin();
+    let posix = OsString::from("/cygdrive/f/a/bb/ccc");
+    let win32_p = cygroot.convert_path_to_native(posix.as_os_str());
+    let win32_s = win32_p.as_os_str().to_string_lossy().into_owned();
+    assert_eq!(win32_s, "F:\\a\\bb\\ccc");
 }
 
 }
