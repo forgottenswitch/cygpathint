@@ -136,6 +136,7 @@ impl CygRoot {
             }
             if just_past_cygdrive {
                 just_past_cygdrive = false;
+                last_was_slash = true;
                 beg_path_comp = i;
             }
             if ch == '/' || ch == '\\' {
@@ -148,6 +149,7 @@ impl CygRoot {
                     }
                     last_was_slash = true;
                 }
+                beg_path_comp = i;
                 continue;
             }
             if last_was_slash {
@@ -322,6 +324,15 @@ fn converts_absolute_posix_paths_several_levels_deep() {
 }
 
 #[test]
+fn converts_absolute_posix_dirs_several_levels_deep() {
+    let cygroot = cygwin();
+    let posix = OsString::from("/tmp/abc/def/ghi/");
+    let win32_p = cygroot.convert_path_to_native(posix.as_os_str());
+    let win32_s = win32_p.as_os_str().to_string_lossy().into_owned();
+    assert_eq!(win32_s, "F:\\cygwin\\tmp\\abc\\def\\ghi");
+}
+
+#[test]
 fn converts_absolute_cygdrive_paths() {
     let cygroot = cygwin();
     let posix = OsString::from("/cygdrive/f");
@@ -334,6 +345,15 @@ fn converts_absolute_cygdrive_paths() {
 fn converts_absolute_cygdrive_paths_several_levels_deep() {
     let cygroot = cygwin();
     let posix = OsString::from("/cygdrive/f/a/bb/ccc");
+    let win32_p = cygroot.convert_path_to_native(posix.as_os_str());
+    let win32_s = win32_p.as_os_str().to_string_lossy().into_owned();
+    assert_eq!(win32_s, "F:\\a\\bb\\ccc");
+}
+
+#[test]
+fn converts_absolute_cygdrive_dirs_several_levels_deep() {
+    let cygroot = cygwin();
+    let posix = OsString::from("/cygdrive/f/a/bb/ccc/");
     let win32_p = cygroot.convert_path_to_native(posix.as_os_str());
     let win32_s = win32_p.as_os_str().to_string_lossy().into_owned();
     assert_eq!(win32_s, "F:\\a\\bb\\ccc");
