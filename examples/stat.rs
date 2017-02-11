@@ -15,7 +15,13 @@ fn stat_path(cygpath: &OsStr, cygroot: &CygRoot) {
         let winpath = cygroot.convert_path_to_native(&cygpath);
         println!("  Converted to native: {:?}", winpath);
 
-        println!("  Maybe cygwin symlink: {}", maybe_cygwin_symlink(&winpath.as_path()));
+        let maybe_cyglink = maybe_cygwin_symlink(&winpath.as_path());
+        println!("  Maybe cygwin symlink: {}", maybe_cyglink);
+
+        if maybe_cyglink {
+            let link_txt = cygroot.read_symlink_contents(&winpath.as_path());
+            println!("    Symlink contents: {:?}", link_txt);
+        }
     }
 }
 

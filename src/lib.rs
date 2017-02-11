@@ -13,6 +13,10 @@ use std::iter::once;
 use std::path::{Path,PathBuf};
 #[cfg(windows)]
 use std::vec::Vec;
+#[cfg(windows)]
+use std::fs::File;
+#[cfg(windows)]
+use std::io::Read;
 
 #[cfg(windows)]
 use winapi::winnt::{
@@ -165,6 +169,30 @@ impl CygRoot {
         }
         ret
     }
+
+    /// Retrieves contents of a C:\cygwin\symlink file
+    pub fn read_symlink_contents(&self, path: &Path) -> Option<PathBuf> {
+        let mut fdata = Vec::<u8>::with_capacity(64);
+        match File::open(path) {
+            Err(_) => return None,
+            Ok(mut f) => {
+                match f.read_to_end(&mut fdata) {
+                    Err(_) => return None,
+                    Ok(_) => {
+                        let filemagic = b"!<symlink>";
+                        if !fdata.as_slice().starts_with(filemagic) {
+                            return None
+                        } else {
+                            let data_after_magic = &fdata[filemagic.len()..];
+                            let string16_in_file = string_from_utf_bom_lossy(data_after_magic);
+                            let path16_in_file = PathBuf::from(&string16_in_file);
+                            return Some(path16_in_file)
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 #[cfg(windows)]
@@ -288,6 +316,39 @@ fn ascii_upcase(x: char) -> char {
     return x;
 }
 
+#[cfg(windows)]
+fn string_from_utf_bom_lossy(data: &[u8]) -> String {
+    let byte_order_mark = &data[..2];
+    let byte_order_mark_islen = byte_order_mark.len() == 2;
+    let data16_is_big_endian =
+        byte_order_mark_islen && byte_order_mark[0] == 254 && byte_order_mark[1] == 255;
+    let data16_is_little_endian =
+        byte_order_mark_islen && byte_order_mark[0] == 255 && byte_order_mark[1] == 254;
+
+    if !data16_is_big_endian && !data16_is_little_endian {
+        return String::from_utf8_lossy(data).into_owned();
+    } else {
+        let data_nobom16 = &data[2..];
+        let mut codepoints_in_data = Vec::<u16>::with_capacity(data_nobom16.len() / 2);
+        let mut even_byte = true;
+        let mut codepoint: u16 = 0;
+        for (i, b) in data_nobom16.iter().enumerate() {
+            let upper_byte =
+                if data16_is_big_endian { even_byte } else { !even_byte };
+            let b16 = *b as u16;
+            codepoint +=
+                if upper_byte { b16 * 256 } else { b16 };
+            if !even_byte {
+                if codepoint == 0 && i != 0 { break }
+                codepoints_in_data.push(codepoint);
+                codepoint = 0;
+            }
+            even_byte = !even_byte;
+        }
+        return String::from_utf16_lossy(codepoints_in_data.as_slice());
+    }
+}
+
 #[cfg(test)]
 #[cfg(windows)]
 mod win32_tests {
@@ -296,6 +357,7 @@ use std::ffi::OsString;
 use std::path::PathBuf;
 
 use CygRoot;
+use string_from_utf_bom_lossy;
 
 fn cygwin() -> CygRoot {
     let root = PathBuf::from("F:\\cygwin");
@@ -357,6 +419,27 @@ fn converts_absolute_cygdrive_dirs_several_levels_deep() {
     let win32_p = cygroot.convert_path_to_native(posix.as_os_str());
     let win32_s = win32_p.as_os_str().to_string_lossy().into_owned();
     assert_eq!(win32_s, "F:\\a\\bb\\ccc");
+}
+
+#[test]
+fn reads_utf16le() {
+    let data : Vec<u8> = vec![ 0xff, 0xfe, b'a', 0, b'b', 0 ];
+    let s = string_from_utf_bom_lossy(data.as_slice());
+    assert_eq!(s, "ab");
+}
+
+#[test]
+fn reads_utf16be() {
+    let data : Vec<u8> = vec![ 0xfe, 0xff, 0, b'a', 0, b'b' ];
+    let s = string_from_utf_bom_lossy(data.as_slice());
+    assert_eq!(s, "ab");
+}
+
+#[test]
+fn reads_utf8_when_no_utf16bom() {
+    let data : Vec<u8> = vec![ b'a', b'b' ];
+    let s = string_from_utf_bom_lossy(data.as_slice());
+    assert_eq!(s, "ab");
 }
 
 }
