@@ -193,6 +193,51 @@ impl CygRoot {
             }
         }
     }
+
+    /// Follows C:\cygwin\symlink once, returning C:\cygwin\target
+    /// If path to the cygwin symlink is relative, return value is relative also.
+    pub fn resolve_symlink_once(&self, path: &Path) -> PathBuf {
+        match self.read_symlink_contents(path) {
+            None => return PathBuf::from(path),
+            Some(cygwin_target) => {
+                return self.join_symlink_native_path_and_cygwin_target(path, &cygwin_target.as_path())
+            }
+        }
+    }
+
+    /// Follows C:\cygwin\symlink as many times as needed, returning C:\cygwin\target
+    /// If path to the cygwin symlink is relative, return value is relative also.
+    pub fn resolve_symlink(&self, path: &Path) -> PathBuf {
+        let mut dest = PathBuf::from(path);
+        loop {
+            match self.read_symlink_contents(&dest.as_path()) {
+                None => return dest,
+                Some(cygwin_target) => {
+                    dest = self.join_symlink_native_path_and_cygwin_target(path, &cygwin_target.as_path())
+                }
+            }
+        }
+    }
+
+    /// Concatenates C:\cygwin\dir1\symlink with:
+    /// - dir2/target into C:\cygwin\dir1\dir2\target
+    /// - /dir2/target into C:\cygwin\dir2\target
+    /// - /cygdrive/d/dir2/target into D:\dir2\target
+    /// Bugs:
+    /// - ../../../../target into C:\target, not C:\cygwin\target
+    /// - ../../../../cygdrive/d into C:\cygdrive\d, not D:\
+    pub fn join_symlink_native_path_and_cygwin_target(&self, native_path: &Path, cygwin_path: &Path) -> PathBuf {
+        if cygwin_path.starts_with("/") {
+            return self.convert_path_to_native(cygwin_path.as_os_str());
+        } else {
+            let cygwin_path_s = cygwin_path.as_os_str().to_string_lossy().into_owned();
+            let cygwin_natived_path = string_without_forward_slashes(&cygwin_path_s.as_str());
+            match native_path.parent() {
+                None => PathBuf::from(cygwin_natived_path),
+                Some(dir) => dir.join(cygwin_natived_path),
+            }
+        }
+    }
 }
 
 #[cfg(windows)]
@@ -349,6 +394,20 @@ fn string_from_utf_bom_lossy(data: &[u8]) -> String {
     }
 }
 
+#[cfg(windows)]
+fn string_without_forward_slashes(s: &str) -> String {
+    let mut ret = String::from(s);
+    unsafe {
+        let v = ret.as_mut_vec();
+        for mut b in v.iter_mut() {
+            if *b == b'/' {
+                *b = b'\\';
+            }
+        }
+    }
+    ret
+}
+
 #[cfg(test)]
 #[cfg(windows)]
 mod win32_tests {
@@ -440,6 +499,56 @@ fn reads_utf8_when_no_utf16bom() {
     let data : Vec<u8> = vec![ b'a', b'b' ];
     let s = string_from_utf_bom_lossy(data.as_slice());
     assert_eq!(s, "ab");
+}
+
+#[test]
+fn joins_symlink_native_path_and_cygwin_relative_target() {
+    let cygroot = cygwin();
+    let symlink = PathBuf::from("C:\\dir1\\symlink");
+    let target = PathBuf::from("a/bb/ccc");
+    let win32_p = cygroot.join_symlink_native_path_and_cygwin_target(symlink.as_path(), target.as_path());
+    let win32_s = win32_p.as_os_str().to_string_lossy().into_owned();
+    assert_eq!(win32_s, "C:\\dir1\\a\\bb\\ccc");
+}
+
+#[test]
+fn joins_symlink_native_path_and_cygwin_absolute_target() {
+    let cygroot = cygwin();
+    let symlink = PathBuf::from("C:\\dir1\\symlink");
+    let target = PathBuf::from("/a/bb/ccc");
+    let win32_p = cygroot.join_symlink_native_path_and_cygwin_target(symlink.as_path(), target.as_path());
+    let win32_s = win32_p.as_os_str().to_string_lossy().into_owned();
+    assert_eq!(win32_s, "F:\\cygwin\\a\\bb\\ccc");
+}
+
+#[test]
+fn joins_symlink_native_path_and_cygwin_absolute_cygdrive_target() {
+    let cygroot = cygwin();
+    let symlink = PathBuf::from("C:\\dir1\\symlink");
+    let target = PathBuf::from("/cygdrive/a/bb/ccc");
+    let win32_p = cygroot.join_symlink_native_path_and_cygwin_target(symlink.as_path(), target.as_path());
+    let win32_s = win32_p.as_os_str().to_string_lossy().into_owned();
+    assert_eq!(win32_s, "A:\\bb\\ccc");
+}
+
+#[test]
+fn joins_symlink_empty_native_path_and_cygwin_absolute_target() {
+    let cygroot = cygwin();
+    let symlink = PathBuf::from("");
+    let target = PathBuf::from("/a/bb/ccc");
+    let win32_p = cygroot.join_symlink_native_path_and_cygwin_target(symlink.as_path(), target.as_path());
+    let win32_s = win32_p.as_os_str().to_string_lossy().into_owned();
+    assert_eq!(win32_s, "F:\\cygwin\\a\\bb\\ccc");
+}
+
+#[test]
+fn joins_symlink_empty_native_path_and_cygwin_relative_target() {
+    let cygroot = cygwin();
+    let symlink = PathBuf::from("");
+    let target = PathBuf::from("a/bb/ccc");
+    let win32_p = cygroot.join_symlink_native_path_and_cygwin_target(symlink.as_path(), target.as_path());
+    let win32_s = win32_p.as_os_str().to_string_lossy().into_owned();
+    assert_eq!(win32_s, "a\\bb\\ccc");
 }
 
 }

@@ -21,6 +21,12 @@ fn stat_path(cygpath: &OsStr, cygroot: &CygRoot) {
         if maybe_cyglink {
             let link_txt = cygroot.read_symlink_contents(&winpath.as_path());
             println!("    Symlink contents: {:?}", link_txt);
+
+            let link_dest1 = cygroot.resolve_symlink_once(&winpath.as_path());
+            println!("    Symlink's first destination: {:?}", link_dest1);
+
+            let link_dest = cygroot.resolve_symlink(&winpath.as_path());
+            println!("    Symlink's final destination: {:?}", link_dest);
         }
     }
 }
