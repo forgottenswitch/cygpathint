@@ -98,30 +98,25 @@ impl CygRoot {
             let mut cygdrive = '\0';
             let path_blen = path_b.len();
             // Check for /cygdrive/drive_letter/
-            eat_chars(path, '/').and_then(|path_1| {
-                eat_str(path_1, "cygdrive").and_then(|path_11| {
-                    eat_chars(path_11, '/').and_then(|path_2| {
-                        pop_char(path_2).and_then(|(drive_letter, path_22)| {
+            if let Some(path_1) = eat_chars(path, '/') {
+                if let Some(path_11) = eat_str(path_1, "cygdrive") {
+                    if let Some(path_2) = eat_chars(path_11, '/') {
+                        if let Some((drive_letter, path_22)) = pop_char(path_2) {
                             if valid_drive_letter(drive_letter) {
                                 if path_22.len() == 0 {
                                     cygdrive = ascii_upcase(drive_letter);
                                     cygdrive_end = path_blen;
                                 } else {
-                                    eat_chars(path_22, '/').and_then(|path_3| {
+                                    if let Some(path_3) = eat_chars(path_22, '/') {
                                         cygdrive = ascii_upcase(drive_letter);
                                         cygdrive_end = path_blen - path_3.as_bytes().len();
-                                        Some(0)
-                                    });
-                                };
-                            };
-                            Some(0)
-                        });
-                        Some(0)
-                    });
-                    Some(0)
-                });
-                Some(0)
-            });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             if cygdrive != '\0' {
                 ret.push(format!("{}:\\", cygdrive));
             } else {
