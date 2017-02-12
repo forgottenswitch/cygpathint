@@ -104,8 +104,8 @@ pub struct CygRoot {
 
 #[cfg(windows)]
 impl CygRoot {
-    /// Looks up cygwin1.dll in PATH, and marks the path two dirs upper as a Cygwin root.
-    /// This is because Cygwin keeps the dll in /bin.
+    /// Looks up `cygwin1.dll` in `PATH`, and marks the path two dirs upper as a Cygwin root.
+    /// This is because Cygwin keeps the dll in `/bin`.
     pub fn new() -> CygRoot {
         let env_path = std::env::var_os("PATH");
         let cygwin_dll_name = Path::new("cygwin1.dll");
@@ -141,20 +141,20 @@ impl CygRoot {
     }
 
     /// Returns Windows path to Cygwin root.
-    /// This involves no processing; everything is done in CygRoot::new().
-    /// Should only be called with cfg!(windows).
+    /// This involves no processing; everything is done in `CygRoot::new()`.
+    /// Should only be called with `cfg!(windows)`.
     pub fn root_path(&self) -> &Path {
         self.native_path_to_root.as_path()
     }
 
     /// Whether running in a Cygwin shell.
-    /// This involves no check; everything is done in CygRoot::new().
+    /// This involves no check; everything is done in `CygRoot::new()`.
     pub fn running_under_cygwin(&self) -> bool {
         self.running_under_cygwin
     }
 
-    /// Converts /cygwin/path to C:\native\one, without following symlinks.
-    /// Should only be called if self.running_under_cygwin() returns true.
+    /// Converts `/cygwin/path` to `C:\native\one`, without following symlinks.
+    /// Should only be called if `self.running_under_cygwin()` returns true.
     pub fn convert_path_to_native(&self, path: &str) -> PathBuf {
         let path_b = path.as_bytes();
         let mut ret = PathBuf::new();
@@ -229,8 +229,8 @@ impl CygRoot {
         ret
     }
 
-    /// Retrieves contents of a C:\cygwin\symlink file
-    /// Should only be called if both self.running_under_cygwin() and maybe_cygwin_symlink(path) return true.
+    /// Retrieves contents of a `C:\cygwin\symlink` file
+    /// Should only be called if both `self.running_under_cygwin()` and `maybe_cygwin_symlink(path)` return true.
     pub fn read_symlink_contents(&self, path: &Path) -> Option<PathBuf> {
         let mut fdata = Vec::<u8>::with_capacity(64);
         match File::open(path) {
@@ -254,9 +254,9 @@ impl CygRoot {
         }
     }
 
-    /// Follows C:\cygwin\symlink once, returning C:\cygwin\target
+    /// Follows `C:\cygwin\symlink` once, returning `C:\cygwin\target`
     /// If path to the cygwin symlink is relative, return value is relative too.
-    /// Should only be called if both self.running_under_cygwin() and maybe_cygwin_symlink(path) return true.
+    /// Should only be called if both `self.running_under_cygwin()` and `maybe_cygwin_symlink(path)` return true.
     pub fn resolve_symlink_once(&self, path: &Path) -> PathBuf {
         match self.read_symlink_contents(path) {
             None => return PathBuf::from(path),
@@ -266,10 +266,10 @@ impl CygRoot {
         }
     }
 
-    /// Follows C:\cygwin\symlink as many times as needed, returning C:\cygwin\target
+    /// Follows `C:\cygwin\symlink` as many times as needed, returning `C:\cygwin\target`
     /// If path to the cygwin symlink is relative, return value is relative too
     /// (unless a further symlink points to an absolute path).
-    /// Should only be called if both self.running_under_cygwin() and maybe_cygwin_symlink(path) return true.
+    /// Should only be called if both `self.running_under_cygwin()` and `maybe_cygwin_symlink(path)` return true.
     pub fn resolve_symlink(&self, path: &Path) -> PathBuf {
         let mut dest = PathBuf::from(path);
         let mut first_iteration = true;
@@ -290,15 +290,15 @@ impl CygRoot {
         }
     }
 
-    /// Concatenates C:\cygwin\dir1\symlink with:
-    /// - dir2/target into C:\cygwin\dir1\dir2\target
-    /// - /dir2/target into C:\cygwin\dir2\target
-    /// - /cygdrive/d/dir2/target into D:\dir2\target
+    /// Concatenates `C:\cygwin\dir1\symlink` with:
+    /// - `dir2/target` into `C:\cygwin\dir1\dir2\target`
+    /// - `/dir2/target` into `C:\cygwin\dir2\target`
+    /// - `/cygdrive/d/dir2/target` into `D:\dir2\target`
     /// Bugs:
-    /// - ../../../../target into C:\target, not C:\cygwin\target
-    /// - ../../../../cygdrive/d into C:\cygdrive\d, not D:\
+    /// - `../../../../target` into `C:\target`, not `C:\cygwin\target`
+    /// - `../../../../cygdrive/d` into `C:\cygdrive\d`, not `D:\`
     ///
-    /// Should only be called with cfg!(windows).
+    /// Should only be called with `cfg!(windows)`.
     pub fn join_symlink_native_path_and_cygwin_target(&self, native_path: &Path, cygwin_path: &Path) -> PathBuf {
         let mut cygwin_path_s = cygwin_path.as_os_str().to_string_lossy().into_owned();
         if cygwin_path.starts_with("/") {
@@ -312,9 +312,9 @@ impl CygRoot {
         }
     }
 
-    /// Converts /cygwin/path to C:\native\one, following Cygwin symlinks.
+    /// Converts `/cygwin/path` to `C:\native\one`, following Cygwin symlinks.
     /// Return value could be relative, as in `resolve_symlink`.
-    /// Could be called without being wrapped in any checks (unlike other methods), even not on cfg!(windows).
+    /// Could be called without being wrapped in any checks (unlike other methods), even not on `cfg!(windows)`.
     pub fn resolve_path(&self, p: &Path) -> PathBuf {
         if !self.running_under_cygwin { return PathBuf::from(p) }
         let p_native =
@@ -330,7 +330,7 @@ impl CygRoot {
 }
 
 /// Queries the file system about whether the file could be a Cygwin symlink.
-/// Always false not on cfg!(windows).
+/// Always false not on `cfg!(windows)`.
 #[cfg(windows)]
 pub fn maybe_cygwin_symlink(path: &Path) -> bool {
     let path_wz: Vec<u16> = path.as_os_str().encode_wide().chain(once(0)).collect();
