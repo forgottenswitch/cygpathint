@@ -4,7 +4,12 @@ cygwin\_fs.rs
 Provides Win32 Rust applications with means to interpret Cygwin absolute paths and symlinks,
 given that they are run from Cygwin console or script.
 
-For usage, see the [example](examples/stat.rs).
+For usage, see the [example](example/stat.rs).
+`Cargo.toml` snippet:
+```
+[dependencies]
+cygwin_fs = "1"
+```
 
 Bugs
 ----
