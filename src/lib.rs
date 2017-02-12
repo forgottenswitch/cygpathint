@@ -54,6 +54,8 @@ pub fn maybe_cygwin_symlink(_path: &Path) -> bool { false }
 
 // Implementation
 
+/// An object that remembers the current Cygwin root path,
+/// for use in path resolving operations.
 #[cfg(windows)]
 pub struct CygRoot {
     native_path_to_root: PathBuf,
@@ -62,6 +64,8 @@ pub struct CygRoot {
 
 #[cfg(windows)]
 impl CygRoot {
+    /// Looks up cygwin1.dll in PATH, and marks the path two dirs upper as a Cygwin root.
+    /// This is because Cygwin keeps the dll in /bin.
     pub fn new() -> CygRoot {
         let env_path = std::env::var_os("PATH");
         let cygwin_dll_name = Path::new("cygwin1.dll");
@@ -88,10 +92,14 @@ impl CygRoot {
         }
     }
 
+    /// Returns Windows path to Cygwin root.
+    /// This involves no processing; everything is done in CygRoot::new().
     pub fn root_path(&self) -> &Path {
         self.native_path_to_root.as_path()
     }
 
+    /// Whether running in a Cygwin shell.
+    /// This involves no check; everything is done in CygRoot::new().
     pub fn running_under_cygwin(&self) -> bool {
         self.running_under_cygwin
     }
@@ -241,6 +249,7 @@ impl CygRoot {
     }
 }
 
+/// Queries the file system about whether the file is probably a Cygwin symlink.
 #[cfg(windows)]
 pub fn maybe_cygwin_symlink(path: &Path) -> bool {
     let path_wz: Vec<u16> = path.as_os_str().encode_wide().chain(once(0)).collect();
