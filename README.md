@@ -1,11 +1,25 @@
 cygwin\_fs.rs
-===================
+=============
 
-Provides means for Rust on Windows applications to interpret Cygwin absolute paths and symlinks,
+Provides Win32 Rust applications with means to interpret Cygwin absolute paths and symlinks,
 given that they are run from Cygwin console or script.
 
-Testing
--------
+For usage, see the [example](examples/stat.rs).
+
+Bugs
+----
+Does not interpret the deprecated Windows Explorer Shortcut symlinks.
+
+Relative paths are interpreted as Windows ones.
+
+|              Symlink                 |      Cygwin     |       This crate       |
+|--------------------------------------|-----------------|------------------------|
+| `/symlink` points to `cygdrive/f`    |      `F:\`      | `C:\cygwin\cygdrive\f` |
+| `/symlink` points to `../cygdrive/f` |      `F:\`      | `C:\cygdrive\f`        |
+| `/symlink` points to `../tmp`        | `C:\cygwin\tmp` | `C:\tmp`               |
+
+Verifying it works
+------------------
 In Cygwin shell:
 ```
 ln -s /tmp /tmp/symlink
