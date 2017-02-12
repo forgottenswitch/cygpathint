@@ -1,3 +1,12 @@
+/*!
+Crate `cygwin_fs` provides Win32 applications with ability to interpret,
+with some quirks, Cygwin absolute paths and symlinks.
+
+For bugs description, see the documentation for `join_symlink_native_path_and_cygwin_target` below.
+The deprecated Windows Explorer Shortcut symlinks are not interpreted.
+
+*/
+
 #[cfg(windows)]
 extern crate kernel32;
 #[cfg(windows)]
