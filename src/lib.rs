@@ -219,7 +219,7 @@ impl CygRoot {
     }
 
     /// Follows C:\cygwin\symlink once, returning C:\cygwin\target
-    /// If path to the cygwin symlink is relative, return value is relative also.
+    /// If path to the cygwin symlink is relative, return value is relative too.
     /// Should only be called if both self.running_under_cygwin() and maybe_cygwin_symlink(path) return true.
     pub fn resolve_symlink_once(&self, path: &Path) -> PathBuf {
         match self.read_symlink_contents(path) {
@@ -231,7 +231,7 @@ impl CygRoot {
     }
 
     /// Follows C:\cygwin\symlink as many times as needed, returning C:\cygwin\target
-    /// If path to the cygwin symlink is relative, return value is relative also.
+    /// If path to the cygwin symlink is relative, return value is relative too.
     /// Should only be called if both self.running_under_cygwin() and maybe_cygwin_symlink(path) return true.
     pub fn resolve_symlink(&self, path: &Path) -> PathBuf {
         let mut dest = PathBuf::from(path);
