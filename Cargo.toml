@@ -2,6 +2,12 @@
 name = "cygwin_fs"
 version = "0.1.0"
 authors = ["Mihail Konev <k.mvc@ya.ru>"]
+description = "Imperfect translation of Cygwin paths for Win32 applications"
+homepage = "https://github.com/forgottenswitch/cygwin_fs"
+repository = "https://github.com/forgottenswitch/cygwin_fs"
+readme = "README.md"
+keywords = ["cygwin", "path", "absolute", "symlink"]
+license = "MIT"
 
 [target.'cfg(windows)'.dependencies]
 kernel32-sys = "0.2.2"
