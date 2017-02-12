@@ -230,7 +230,15 @@ impl CygRoot {
     /// If path to the cygwin symlink is relative, return value is relative also.
     pub fn resolve_symlink(&self, path: &Path) -> PathBuf {
         let mut dest = PathBuf::from(path);
+        let mut first_iteration = true;
         loop {
+            if first_iteration {
+                first_iteration = false
+            } else {
+                if !maybe_cygwin_symlink(&dest.as_path()) {
+                    return dest
+                }
+            }
             match self.read_symlink_contents(&dest.as_path()) {
                 None => return dest,
                 Some(cygwin_target) => {
