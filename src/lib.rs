@@ -70,6 +70,11 @@ impl CygRoot {
             empty_root_pathbuf: PathBuf::new(),
         }
     }
+    pub fn from(_native_path_to_root: PathBuf, _under_cygwin: bool) -> CygRoot {
+        CygRoot {
+            empty_root_pathbuf: PathBuf::new(),
+        }
+    }
 
     pub fn root_path(&self) -> &Path { self.empty_root_pathbuf.as_path() }
     pub fn running_under_cygwin(&self) -> bool { false }
@@ -124,6 +129,14 @@ impl CygRoot {
         CygRoot {
             running_under_cygwin: under_cygwin,
             native_path_to_root: root,
+        }
+    }
+
+    /// Constructs an arbitrary CygRoot.
+    pub fn from(native_path_to_root: PathBuf, under_cygwin: bool) -> CygRoot {
+        CygRoot {
+            running_under_cygwin: under_cygwin,
+            native_path_to_root: native_path_to_root,
         }
     }
 
