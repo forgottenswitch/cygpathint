@@ -1,12 +1,19 @@
 extern crate cygwin_fs;
 
+use std::path::PathBuf;
+
 use cygwin_fs::{CygRoot, maybe_cygwin_symlink};
 
 fn stat_path(cygpath: &str, cygroot: &CygRoot) {
-    println!("{}", cygpath);
+    println!("Cygwin path: {}", cygpath);
 
+    let cygwin_path = PathBuf::from(cygpath);
+    println!(" Converted to native the automatic way: {:?}",
+        cygroot.resolve_path(cygwin_path.as_path()));
+
+    println!(" In detail:");
     if !cygroot.running_under_cygwin() {
-        println!("  Not running under cygwin.");
+        println!("  Not running under cygwin (so not converting at all).");
     } else {
         println!("  Cygwin root: {:?}", cygroot.root_path());
 

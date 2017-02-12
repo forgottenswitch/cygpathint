@@ -57,6 +57,7 @@ impl CygRoot {
 
     pub fn join_symlink_native_path_and_cygwin_target(&self, _native_path: &Path,
             _cygwin_path: &Path) -> PathBuf { PathBuf::new() }
+    pub fn resolve_path(&self, path: &Path) -> PathBuf { PathBuf::from(path) }
 }
 
 #[cfg(not(windows))]
@@ -257,6 +258,20 @@ impl CygRoot {
                 Some(dir) => dir.join(cygwin_path_s),
             }
         }
+    }
+
+    /// Converts /cygwin/path to C:\native\one, following Cygwin symlinks.
+    pub fn resolve_path(&self, p: &Path) -> PathBuf {
+        if !self.running_under_cygwin { return PathBuf::from(p) }
+        let p_native =
+            if p.starts_with("/") {
+                let p_s = p.as_os_str().to_string_lossy().into_owned();
+                self.convert_path_to_native(&p_s.as_str())
+            } else {
+                PathBuf::from(p)
+            };
+        if !maybe_cygwin_symlink(&p_native.as_path()) { return p_native }
+        return self.resolve_symlink(&p_native.as_path())
     }
 }
 
