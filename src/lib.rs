@@ -1,9 +1,32 @@
 /*!
 Crate `cygwin_fs` provides Win32 applications with ability to interpret,
-with some quirks, Cygwin absolute paths and symlinks.
+with some quirks, Cygwin absolute paths and symlinks,
+given that they are run from Cygwin shell or script.
 
 For bugs description, see the documentation for `join_symlink_native_path_and_cygwin_target` below.
 The deprecated Windows Explorer Shortcut symlinks are not interpreted.
+
+```rust
+extern crate cygwin_fs;
+
+fn main() {
+    let p = ::std::path::PathBuf::from("/cygwin/path");
+
+    let cygroot = cygwin_fs::CygRoot::new();
+    let w = cygroot.resolve_path(p.as_path());
+
+    println!("{:?} => {:?}", p, w);
+}
+```
+
+If file access time matters:
+```rust,no_run
+if cfg!(windows) {
+    if cygwin_fs::maybe_cygwin_symlink(p) {
+        ...
+    }
+}
+```
 
 */
 
