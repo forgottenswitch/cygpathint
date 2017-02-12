@@ -228,14 +228,14 @@ impl CygRoot {
     /// - ../../../../target into C:\target, not C:\cygwin\target
     /// - ../../../../cygdrive/d into C:\cygdrive\d, not D:\
     pub fn join_symlink_native_path_and_cygwin_target(&self, native_path: &Path, cygwin_path: &Path) -> PathBuf {
-        let cygwin_path_s = cygwin_path.as_os_str().to_string_lossy().into_owned();
+        let mut cygwin_path_s = cygwin_path.as_os_str().to_string_lossy().into_owned();
         if cygwin_path.starts_with("/") {
             return self.convert_path_to_native(&cygwin_path_s.as_str());
         } else {
-            let cygwin_natived_path = string_without_forward_slashes(&cygwin_path_s.as_str());
+            backslash_the_slashes_in_string(&mut cygwin_path_s);
             match native_path.parent() {
-                None => PathBuf::from(cygwin_natived_path),
-                Some(dir) => dir.join(cygwin_natived_path),
+                None => PathBuf::from(cygwin_path_s),
+                Some(dir) => dir.join(cygwin_path_s),
             }
         }
     }
@@ -396,17 +396,15 @@ fn string_from_utf_bom_lossy(data: &[u8]) -> String {
 }
 
 #[cfg(windows)]
-fn string_without_forward_slashes(s: &str) -> String {
-    let mut ret = String::from(s);
+fn backslash_the_slashes_in_string(s: &mut String) {
     unsafe {
-        let v = ret.as_mut_vec();
+        let v = s.as_mut_vec();
         for mut b in v.iter_mut() {
             if *b == b'/' {
                 *b = b'\\';
             }
         }
     }
-    ret
 }
 
 #[cfg(test)]
