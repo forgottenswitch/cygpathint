@@ -267,7 +267,8 @@ impl CygRoot {
     }
 
     /// Follows C:\cygwin\symlink as many times as needed, returning C:\cygwin\target
-    /// If path to the cygwin symlink is relative, return value is relative too.
+    /// If path to the cygwin symlink is relative, return value is relative too
+    /// (unless a further symlink points to an absolute path).
     /// Should only be called if both self.running_under_cygwin() and maybe_cygwin_symlink(path) return true.
     pub fn resolve_symlink(&self, path: &Path) -> PathBuf {
         let mut dest = PathBuf::from(path);
@@ -312,6 +313,7 @@ impl CygRoot {
     }
 
     /// Converts /cygwin/path to C:\native\one, following Cygwin symlinks.
+    /// Return value could be relative, as in `resolve_symlink`.
     /// Could be called without being wrapped in any checks (unlike other methods), even not on cfg!(windows).
     pub fn resolve_path(&self, p: &Path) -> PathBuf {
         if !self.running_under_cygwin { return PathBuf::from(p) }
