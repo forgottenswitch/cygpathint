@@ -3,14 +3,14 @@ extern crate kernel32;
 #[cfg(windows)]
 extern crate winapi;
 
+use std::path::{Path,PathBuf};
+
 #[cfg(windows)]
 use std::ffi::{OsString};
 #[cfg(windows)]
 use std::os::windows::ffi::OsStrExt;
 #[cfg(windows)]
 use std::iter::once;
-#[cfg(windows)]
-use std::path::{Path,PathBuf};
 #[cfg(windows)]
 use std::vec::Vec;
 #[cfg(windows)]
@@ -27,23 +27,30 @@ use winapi::winnt::{
 
 #[cfg(not(windows))]
 pub struct CygRoot {
+    empty_root_pathbuf: PathBuf,
 }
 
 #[cfg(not(windows))]
 impl CygRoot {
     pub fn new() -> CygRoot {
-        CygRoot {}
+        CygRoot {
+            empty_root_pathbuf: PathBuf::new(),
+        }
     }
 
-    pub fn running_under_cygwin(&self) -> bool {
-        false
-    }
+    pub fn root_path(&self) -> &Path { self.empty_root_pathbuf.as_path() }
+    pub fn running_under_cygwin(&self) -> bool { false }
+    pub fn convert_path_to_native(&self, _path: &str) -> PathBuf { PathBuf::new() }
+    pub fn read_symlink_contents(&self, _path: &Path) -> Option<PathBuf> { None }
+    pub fn resolve_symlink_once(&self, _path: &Path) -> PathBuf { PathBuf::new() }
+    pub fn resolve_symlink(&self, _path: &Path) -> PathBuf { PathBuf::new() }
+
+    pub fn join_symlink_native_path_and_cygwin_target(&self, _native_path: &Path,
+            _cygwin_path: &Path) -> PathBuf { PathBuf::new() }
 }
 
 #[cfg(not(windows))]
-pub fn maybe_cygwin_symlink(path: &Path) -> bool {
-    false
-}
+pub fn maybe_cygwin_symlink(_path: &Path) -> bool { false }
 
 // Implementation
 
