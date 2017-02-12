@@ -35,6 +35,7 @@ use winapi::winnt::{
 // Stub
 
 #[cfg(not(windows))]
+#[derive(Clone,Debug)]
 pub struct CygRoot {
     empty_root_pathbuf: PathBuf,
 }
@@ -66,6 +67,7 @@ pub fn maybe_cygwin_symlink(_path: &Path) -> bool { false }
 /// An object that remembers the current Cygwin root path,
 /// for use in path resolving operations.
 #[cfg(windows)]
+#[derive(Clone,Debug)]
 pub struct CygRoot {
     native_path_to_root: PathBuf,
     running_under_cygwin: bool,
