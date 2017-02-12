@@ -1,5 +1,5 @@
 /*!
-Crate `cygwin_fs` provides Win32 applications with ability to interpret,
+Provides Win32 applications with ability to interpret,
 with some quirks, Cygwin absolute paths and symlinks,
 given that they are run from Cygwin shell or script.
 
