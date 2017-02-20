@@ -5,10 +5,10 @@ Provides Win32 Rust applications with means to interpret Cygwin absolute paths a
 given that they are run from Cygwin console or script.
 
 For usage, see the [example](example/stat.rs).
-`Cargo.toml` snippet:
+For now, there is no crate, so clone as a git submodule, and add the following to `Cargo.toml`:
 ```
 [dependencies]
-cygwin_fs = "1"
+cygwin_fs = { version = "1", path = "cygwin_fs" }
 ```
 
 Bugs
