@@ -11,8 +11,10 @@ For now, there is no crate, so clone as a git submodule, and add the following t
 cygwin_fs = { version = "1", path = "cygwin_fs" }
 ```
 
-Bugs
-----
+Bugs and limitations
+--------------------
+Does not support/recognize mount points.
+
 Does not interpret the deprecated Windows Explorer Shortcut symlinks.
 
 Relative paths are interpreted as Windows ones.

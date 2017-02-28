@@ -5,6 +5,7 @@ given that they are run from Cygwin shell or script.
 
 For bugs description, see the documentation for `join_symlink_native_path_and_cygwin_target` below.
 The deprecated Windows Explorer Shortcut symlinks are not interpreted.
+Mount points are not recognized.
 
 ```rust
 extern crate cygwin_fs;
