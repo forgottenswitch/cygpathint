@@ -4,6 +4,9 @@ cygwin\_fs.rs
 Provides Win32 Rust applications with means to interpret Cygwin absolute paths and symlinks,
 given that they are run from Cygwin console or script.
 
+This library does not do runtime linking to `cygwin1.dll`.
+This is wrong, and gives all the bugs and limitations below.
+
 For usage, see the [example](example/stat.rs).
 For now, there is no crate, so clone as a git submodule, and add the following to `Cargo.toml`:
 ```
